@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>ClipHook</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ClipHook" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0a'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E✂%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --surface3: #222222;
+      --text: #fafafa;
+      --muted: #8e8e93;
+      --accent: #ffffff;
+      --accent-hover: #e5e5ea;
+      --accent-strong: #ffd60a;
+      --border: #2c2c2e;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+
+    /* LOGIN BLINDATO */
+    #login-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--bg);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .login-logo { font-size: 3rem; margin-bottom: 1rem; }
+    .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .login-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+    /* CONTENITORE PRINCIPALE (NASCONTO DI DEFAULT) */
+    #app-container { display: none; padding: 1.5rem; max-width: 680px; margin: 0 auto; padding-bottom: 5rem; }
+
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .logo-area { display: flex; align-items: center; gap: 0.5rem; }
+    
+    .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    input[type="password"], input[type="url"], textarea {
+      width: 100%; background-color: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: 0.85rem 1rem; font-size: 0.95rem; outline: none;
+    }
+    
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background-color: var(--accent); color: var(--bg); border: none; border-radius: 8px;
+      padding: 0.85rem 1.2rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; gap: 0.5rem;
+    }
+    .btn-sec { background-color: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background-color: #ff453a; color: #fff; }
+
+    .project-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; }
+    @media(min-width: 480px) { .project-grid { grid-template-columns: 1fr 1fr; } }
+    
+    .proj-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; display: flex; flex-direction: column; }
+    .proj-thumb-wrap { width: 100%; aspect-ratio: 16/9; background-color: #000; position: relative; }
+    .proj-thumb { width: 100%; height: 100%; object-fit: cover; }
+    .proj-status-badge { position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.8); border: 1px solid var(--border); padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; }
+    .proj-info { padding: 1rem; }
+    .proj-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .proj-date { font-size: 0.75rem; color: var(--muted); }
+
+    .view-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .back-btn { font-size: 1.2rem; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; }
+    .video-hero { display: flex; gap: 1rem; background: var(--surface); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; align-items: center; }
+    .video-hero img { width: 100px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; }
+
+    #loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(10,10,10,0.9); z-index: 10000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+    #loading-overlay.visible { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--surface2); border-top-color: var(--text); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: var(--bg); padding: 0.75rem 1.5rem; border-radius: 30px; font-weight: 600; font-size: 0.9rem; z-index: 11000; transition: transform 0.3s; }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    .rating-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface2); padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700; border: 1px solid var(--border); }
+    .rating-badge span { color: var(--accent-strong); }
+    .clip-item { border: 1px solid var(--border); background: var(--surface2); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .clip-meta { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; }
+    .clip-time { color: var(--accent-strong); background: rgba(255, 214, 10, 0.1); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .clip-score { color: #34c759; }
+    .clip-title { font-weight: 700; margin-bottom: 0.5rem; }
+    .clip-hook { background: #000; padding: 0.75rem; border-radius: 6px; border-left: 3px solid var(--text); font-size: 0.9rem; font-style: italic; margin-bottom: 0.75rem; }
+    .cmd-box { background: #000; font-family: monospace; font-size: 0.75rem; padding: 0.75rem; border-radius: 6px; overflow-x: auto; color: #34c759; border: 1px solid var(--border); margin-bottom: 0.75rem; white-space: pre; }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div class="login-container">
+      <div class="login-logo">✂️</div>
+      <div class="login-title">ClipHook Private</div>
+      <div class="login-desc">Inserisci il tuo Token di sicurezza privato per sbloccare l'applicazione.</div>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <input type="password" id="login-token" placeholder="Incolla il Token Segreto..." required style="margin-bottom: 1.25rem; text-align: center;" />
+        <button type="submit" class="btn">Sblocca App</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-container">
+    
+    <div id="view-home">
+      <header>
+        <div class="logo-area"><span>✂️</span><h1>ClipHook</h1></div>
+        <button class="btn btn-sec" style="width: auto; padding: 0.5rem 0.8rem; font-size: 0.8rem;" onclick="handleLogout()">Esci</button>
+      </header>
+
+      <div class="card">
+        <div class="card-title">🔗 Nuovo Progetto</div>
+        <form onsubmit="handleFetchVideo(event)">
+          <input type="url" id="youtube-url" placeholder="Incolla l'URL del video di YouTube..." required style="margin-bottom: 0.75rem;" />
+          <button type="submit" class="btn">Analizza Video</button>
+        </form>
+      </div>
+
+      <h2 style="font-size: 1.25rem; margin-bottom: 0.75rem;">I tuoi Progetti</h2>
+      <div id="projects-list" class="project-grid"></div>
+    </div>
+
+    <div id="view-project" style="display: none;">
+      <div class="view-header">
+        <div class="back-btn" onclick="showHomeView()">&larr;</div>
+        <h3>Dettagli Progetto</h3>
+      </div>
+
+      <div id="project-hero-container"></div>
+
+      <div class="card" id="card-phase-prompt" style="display: none;">
+        <div class="card-title">🤖 1. Copia il Prompt per l'AI</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Copia il prompt qui sotto e incollalo all'interno di Claude o ChatGPT.</p>
+        <button class="btn" onclick="copyAIPrompt()" style="margin-bottom: 1rem;">📋 Copia Prompt di Sistema</button>
+        <textarea id="ai-prompt-text" readonly style="height: 100px; font-size: 0.8rem; color: var(--muted); background: #000;"></textarea>
+      </div>
+
+      <div class="card" id="card-phase-paste" style="display: none;">
+        <div class="card-title">📥 2. Incolla il Risultato dell'AI</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Incolla la risposta in formato JSON fornita dall'AI.</p>
+        <form onsubmit="handleSaveAIResult(event)">
+          <textarea id="ai-json-input" placeholder="Incolla il codice JSON qui..." required style="height: 120px; font-family: monospace; font-size: 0.85rem; margin-bottom: 0.75rem;"></textarea>
+          <button type="submit" class="btn">Elabora e Mostra Clip</button>
+        </form>
+      </div>
+
+      <div id="card-phase-results" style="display: none;">
+        <div class="card" style="text-align: center;">
+          <div class="card-title" style="justify-content: center;">Valutazione Complessiva</div>
+          <div class="rating-badge" style="margin: 0.5rem 0 1rem 0;">Voto: <span id="rating-score">0</span>/100</div>
+          <p id="rating-motivation" style="font-size: 0.9rem; color: var(--muted); line-height: 1.4;"></p>
+        </div>
+
+        <h2 style="font-size: 1.2rem; margin-bottom: 0.75rem;">Le Clip più Virali</h2>
+        <div id="clips-output-container"></div>
+
+        <button class="btn btn-danger" onclick="handleDeleteProject()" style="margin-top: 1.5rem;">🗑 Elimina Progetto</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loading-text" style="font-size: 0.95rem; font-weight: 500;"></p>
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    const API_BASE_URL = 'https://hshsh-q3xq.onrender.com';
+    const HARDCODED_TOKEN = 'K9xW2mQpL8nRjT4wYbA6cXeZsDuF3hGiN7oV1tW0_CLIPHOOK_PRIVATE';
+    let currentProject = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem('cliphook_token') === HARDCODED_TOKEN) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        loadProjectsFromBackend();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+      }
+    });
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const inputToken = document.getElementById('login-token').value.trim();
+      if (inputToken === HARDCODED_TOKEN) {
+        localStorage.setItem('cliphook_token', inputToken);
+        showToast('🔓 Accesso autorizzato!');
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        loadProjectsFromBackend();
+      } else {
+        showToast('❌ Token errato!');
+        document.getElementById('login-token').value = '';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('cliphook_token');
+      document.getElementById('login-token').value = '';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app-container').style.display = 'none';
+    }
+
+    function getHeaders() {
+      return { 'Content-Type': 'application/json', 'x-auth-token': HARDCODED_TOKEN };
+    }
+
+    async function loadProjectsFromBackend() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/projects`, { headers: getHeaders() });
+        const data = await res.json();
+        if (data.success) renderProjectsGrid(data.projects);
+      } catch (err) {
+        showToast('⚠️ Errore connessione server Render');
+      }
+    }
+
+    function renderProjectsGrid(projects) {
+      const grid = document.getElementById('projects-list');
+      grid.innerHTML = '';
+      if (projects.length === 0) {
+        grid.innerHTML = `<p style="color:var(--muted);text-align:center;grid-column:1/-1;padding:2rem 0;">Nessun progetto. Inserisci un link sopra!</p>`;
+        return;
+      }
+      projects.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'proj-card';
+        card.onclick = () => openProjectDetails(p.videoId);
+        card.innerHTML = `
+          <div class="proj-thumb-wrap">
+            <img src="${p.thumbnail}" class="proj-thumb" onerror="this.src='https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500'"/>
+            <div class="proj-status-badge">${p.status}</div>
+          </div>
+          <div class="proj-info">
+            <div class="proj-name">${p.title}</div>
+            <div class="proj-date">${new Date(p.createdAt).toLocaleDateString('it-IT')}</div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    async function handleFetchVideo(e) {
+      e.preventDefault();
+      const urlInput = document.getElementById('youtube-url');
+      const url = urlInput.value.trim();
+      showLoading(true, 'Estrazione trascrizione in corso...');
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/fetch-video`, {
+          method: 'POST', headers: getHeaders(), body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        showLoading(false);
+        if (data.success) {
+          urlInput.value = '';
+          loadProjectsFromBackend();
+          showProjectView(data.project);
+        } else { alert(`Errore: ${data.message}`); }
+      } catch (err) { showLoading(false); alert('Errore di rete. Server Render in avvio?'); }
+    }
+
+    async function openProjectDetails(videoId) {
+      showLoading(true, 'Caricamento progetto...');
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/projects/${videoId}`, { headers: getHeaders() });
+        const data = await res.json();
+        showLoading(false);
+        if (data.success) showProjectView(data.project);
+      } catch (e) { showLoading(false); showToast('❌ Errore apertura'); }
+    }
+
+    function showProjectView(project) {
+      currentProject = project;
+      document.getElementById('view-home').style.display = 'none';
+      document.getElementById('view-project').style.display = 'block';
+
+      document.getElementById('project-hero-container').innerHTML = `
+        <div class="video-hero">
+          <img src="${project.thumbnail}" />
+          <div>
+            <h2>${project.title}</h2>
+            <a href="${project.url}" target="_blank" style="color:var(--muted);font-size:0.8rem;text-decoration:none;">🔗 Vedi su YouTube</a>
+          </div>
+        </div>`;
+
+      if (project.status === 'Pronto per AI') {
+        document.getElementById('card-phase-prompt').style.display = 'block';
+        document.getElementById('card-phase-paste').style.display = 'block';
+        document.getElementById('card-phase-results').style.display = 'none';
+        document.getElementById('ai-prompt-text').value = project.aiPrompt;
+        document.getElementById('ai-json-input').value = '';
+      } else {
+        document.getElementById('card-phase-prompt').style.display = 'none';
+        document.getElementById('card-phase-paste').style.display = 'none';
+        document.getElementById('card-phase-results').style.display = 'block';
+        renderClipsResults(project);
+      }
+      window.scrollTo(0,0);
+    }
+
+    function copyAIPrompt() {
+      copyText(document.getElementById('ai-prompt-text').value, '📋 Prompt copiato!');
+    }
+
+    async function handleSaveAIResult(e) {
+      e.preventDefault();
+      const rawInput = document.getElementById('ai-json-input').value.trim();
+      let cleanedJSON;
+      try {
+        const startIdx = rawInput.indexOf('{');
+        const endIdx = rawInput.lastIndexOf('}');
+        if(startIdx === -1 || endIdx === -1) throw new Error();
+        cleanedJSON = JSON.parse(rawInput.substring(startIdx, endIdx + 1));
+      } catch(err) {
+        alert('❌ JSON non valido. Assicurati di copiare tutto il testo generato dall\'AI.');
+        return;
+      }
+
+      showLoading(true, 'Elaborazione clip...');
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/projects/${currentProject.videoId}/clips`, {
+          method: 'POST', headers: getHeaders(), body: JSON.stringify(cleanedJSON)
+        });
+        const data = await res.json();
+        showLoading(false);
+        if (data.success) {
+          showToast('⚡ Clip salvate!');
+          showProjectView(data.project);
+          loadProjectsFromBackend();
+        } else { alert(data.message); }
+      } catch(err) { showLoading(false); alert('Errore di comunicazione col server.'); }
+    }
+
+    function renderClipsResults(project) {
+      document.getElementById('rating-score').textContent = project.videoRating?.score || '0';
+      document.getElementById('rating-motivation').textContent = project.videoRating?.motivazione || '';
+      const container = document.getElementById('clips-output-container');
+      container.innerHTML = '';
+      if(!project.clips) return;
+
+      project.clips.forEach(clip => {
+        const item = document.createElement('div');
+        item.className = 'clip-item';
+        item.innerHTML = `
+          <div class="clip-meta">
+            <span class="clip-time">⏱ ${clip.start_time} - ${clip.end_time}</span>
+            <span class="clip-score">Viral: ${clip.viral_score}%</span>
+          </div>
+          <div class="clip-title">#${clip.rank} - ${clip.titolo}</div>
+          <div class="clip-hook"><strong>Hook:</strong> "${clip.hook}"</div>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">${clip.motivazione}</p>
+          <div class="cmd-box">${clip.ytDlpCommand}</div>
+          <button class="btn btn-sec" style="padding:0.5rem;font-size:0.8rem;" onclick="copyText('${clip.ytDlpCommand.replace(/'/g, "\\'")}', '📋 Comando Copiato!')">Copia Comando PC</button>`;
+        container.appendChild(item);
+      });
+    }
+
+    async function handleDeleteProject() {
+      if(!confirm('Vuoi eliminare il progetto?')) return;
+      showLoading(true, 'Eliminazione...');
+      try {
+        await fetch(`${API_BASE_URL}/api/projects/${currentProject.videoId}`, { method: 'DELETE', headers: getHeaders() });
+        showLoading(false); showHomeView(); loadProjectsFromBackend(); showToast('🗑 Eliminato');
+      } catch (e) { showLoading(false); showToast('❌ Errore'); }
+    }
+
+    function showHomeView() {
+      document.getElementById('view-project').style.display = 'none';
+      document.getElementById('view-home').style.display = 'block';
+      currentProject = null;
+    }
+
+    function showLoading(show, text = '') {
+      const el = document.getElementById('loading-overlay');
+      document.getElementById('loading-text').textContent = text;
+      if (show) el.classList.add('visible'); else el.classList.remove('visible');
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    function copyText(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(() => fallbackCopy(text, successMsg));
+      } else { fallbackCopy(text, successMsg); }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const ta = document.createElement('textarea'); ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); showToast(successMsg); } catch(e) { showToast('⚠️ Errore copia'); }
+      document.body.removeChild(ta);
+    }
+  </script>
+</body>
+</html>
